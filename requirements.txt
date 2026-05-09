@@ -1,0 +1,9 @@
+speechrecognition
+pyttsx3
+pyaudio
+requests
+python-dotenv
+pillow
+psutil
+pywin32
+keyboard
