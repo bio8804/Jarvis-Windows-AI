@@ -3,6 +3,8 @@ import pyttsx3
 from config import WAKE_WORD, VOICE_RATE, VOICE_VOLUME, AI_PROVIDER
 from ai.chat_memory import ChatMemory
 from skills.app_launcher import launch_app
+from skills.document_translator import DocumentTranslator
+from skills.docx_handler import validate_docx, build_output_filename
 from system.power import shutdown_pc, restart_pc, lock_pc
 from system.folders import open_downloads, open_documents, open_desktop
 
@@ -11,6 +13,7 @@ engine.setProperty('rate', VOICE_RATE)
 engine.setProperty('volume', VOICE_VOLUME)
 
 memory = ChatMemory(provider=AI_PROVIDER)
+doc_translator = DocumentTranslator(provider=AI_PROVIDER)
 
 
 def speak(text):
@@ -23,7 +26,6 @@ def listen():
     recognizer = sr.Recognizer()
     with sr.Microphone() as source:
         audio = recognizer.listen(source, timeout=5)
-
     try:
         return recognizer.recognize_google(audio, language='ru-RU')
     except Exception:
@@ -33,69 +35,57 @@ def listen():
 def process_local_command(prompt):
     apps = ['telegram', 'chrome', 'word', 'excel', 'notepad']
 
+    if 'переведи документ' in prompt and '.docx' in prompt:
+        parts = prompt.split('переведи документ', 1)
+        file_path = parts[1].strip()
+        if validate_docx(file_path):
+            output_file = build_output_filename(file_path)
+            doc_translator.translate_docx(file_path, output_file)
+            return f'Перевод завершён. Файл сохранён: {output_file}'
+        return 'DOCX файл не найден.'
+
     if 'открой загрузки' in prompt:
-        open_downloads()
-        return 'Открываю загрузки'
-
+        open_downloads(); return 'Открываю загрузки'
     if 'открой документы' in prompt:
-        open_documents()
-        return 'Открываю документы'
-
+        open_documents(); return 'Открываю документы'
     if 'открой рабочий стол' in prompt:
-        open_desktop()
-        return 'Открываю рабочий стол'
-
+        open_desktop(); return 'Открываю рабочий стол'
     if 'выключи компьютер' in prompt:
-        shutdown_pc()
-        return 'Выключаю компьютер'
-
+        shutdown_pc(); return 'Выключаю компьютер'
     if 'перезагрузи компьютер' in prompt:
-        restart_pc()
-        return 'Перезагружаю компьютер'
-
+        restart_pc(); return 'Перезагружаю компьютер'
     if 'заблокируй компьютер' in prompt:
-        lock_pc()
-        return 'Блокирую компьютер'
+        lock_pc(); return 'Блокирую компьютер'
 
     if 'открой' in prompt:
         for app in apps:
-            if app in prompt:
-                if launch_app(app):
-                    return f'Открываю {app}'
+            if app in prompt and launch_app(app):
+                return f'Открываю {app}'
 
     return None
 
 
 def main():
     speak('Jarvis запущен.')
-
     while True:
         command = listen()
-
         if not command:
             continue
-
         cmd = command.lower()
-
         if 'выход' in cmd or 'пока' in cmd:
             speak('До свидания!')
             break
-
         if WAKE_WORD in cmd:
             prompt = cmd.replace(WAKE_WORD, '').strip()
-
             local_result = process_local_command(prompt)
-
             if local_result:
                 speak(local_result)
                 continue
-
             try:
                 speak(memory.ask(prompt))
             except Exception as e:
                 speak('Ошибка подключения к языковой модели.')
                 print(e)
-
 
 if __name__ == '__main__':
     main()
