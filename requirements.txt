@@ -8,3 +8,4 @@ psutil
 pywin32
 keyboard
 openai
+python-docx
