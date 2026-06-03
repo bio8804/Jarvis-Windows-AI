@@ -1,11 +1,13 @@
 import speech_recognition as sr
 import pyttsx3
 from config import WAKE_WORD, VOICE_RATE, VOICE_VOLUME, AI_PROVIDER
-from ai.provider import chat
+from ai.chat_memory import ChatMemory
 
 engine = pyttsx3.init()
 engine.setProperty('rate', VOICE_RATE)
 engine.setProperty('volume', VOICE_VOLUME)
+
+memory = ChatMemory(provider=AI_PROVIDER)
 
 
 def speak(text):
@@ -37,19 +39,21 @@ def main():
         if not command:
             continue
 
-        if 'выход' in command.lower() or 'пока' in command.lower():
+        cmd = command.lower()
+
+        if 'выход' in cmd or 'пока' in cmd:
             speak('До свидания!')
             break
 
-        if WAKE_WORD in command.lower():
-            prompt = command.lower().replace(WAKE_WORD, '').strip()
+        if WAKE_WORD in cmd:
+            prompt = cmd.replace(WAKE_WORD, '').strip()
 
             if not prompt:
                 speak('Слушаю вас.')
                 continue
 
             try:
-                answer = chat(prompt, AI_PROVIDER)
+                answer = memory.ask(prompt)
                 speak(answer)
             except Exception as e:
                 speak('Ошибка подключения к языковой модели.')
