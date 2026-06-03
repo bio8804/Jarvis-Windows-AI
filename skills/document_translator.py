@@ -7,20 +7,30 @@ class DocumentTranslator:
     def __init__(self, provider='deepseek'):
         self.memory = ChatMemory(provider=provider)
 
+    def _translate_text(self, text):
+        text = text.strip()
+        if not text:
+            return text
+
+        translated = self.memory.ask(
+            f'Translate the following pharmaceutical/GMP text into Russian and preserve meaning, numbering, units and formatting: {text}'
+        )
+
+        return translate_gmp_text(translated)
+
     def translate_docx(self, input_file, output_file):
         doc = Document(input_file)
 
         for paragraph in doc.paragraphs:
-            text = paragraph.text.strip()
+            if paragraph.text.strip():
+                paragraph.text = self._translate_text(paragraph.text)
 
-            if not text:
-                continue
-
-            translated = self.memory.ask(
-                f'Translate the following pharmaceutical/GMP text into Russian and preserve meaning and formatting: {text}'
-            )
-
-            paragraph.text = translate_gmp_text(translated)
+        for table in doc.tables:
+            for row in table.rows:
+                for cell in row.cells:
+                    for paragraph in cell.paragraphs:
+                        if paragraph.text.strip():
+                            paragraph.text = self._translate_text(paragraph.text)
 
         doc.save(output_file)
         return output_file
