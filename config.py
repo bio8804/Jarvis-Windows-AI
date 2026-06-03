@@ -3,14 +3,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# API keys
-GROQ_API_KEY = os.getenv('GROQ_API_KEY')
-# GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'deepseek')
 
-# Settings
-WAKE_WORD = "jarvis"
+WAKE_WORD = 'jarvis'
 VOICE_RATE = 180
 VOICE_VOLUME = 1.0
 
-# Paths
-LOG_FILE = "jarvis.log"
+LOG_FILE = 'jarvis.log'
