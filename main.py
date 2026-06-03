@@ -2,6 +2,7 @@ import speech_recognition as sr
 import pyttsx3
 from config import WAKE_WORD, VOICE_RATE, VOICE_VOLUME, AI_PROVIDER
 from ai.chat_memory import ChatMemory
+from skills.app_launcher import launch_app
 
 engine = pyttsx3.init()
 engine.setProperty('rate', VOICE_RATE)
@@ -30,6 +31,19 @@ def listen():
         return None
 
 
+def process_local_command(prompt):
+    apps = ['telegram', 'chrome', 'word', 'excel', 'notepad']
+
+    if 'открой' in prompt:
+        for app in apps:
+            if app in prompt:
+                if launch_app(app):
+                    return f'Открываю {app}'
+                return f'Не удалось открыть {app}'
+
+    return None
+
+
 def main():
     speak('Jarvis запущен.')
 
@@ -50,6 +64,12 @@ def main():
 
             if not prompt:
                 speak('Слушаю вас.')
+                continue
+
+            local_result = process_local_command(prompt)
+
+            if local_result:
+                speak(local_result)
                 continue
 
             try:
