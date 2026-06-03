@@ -1,45 +1,60 @@
 import speech_recognition as sr
 import pyttsx3
-import datetime
-import os
-from config import WAKE_WORD, VOICE_RATE, VOICE_VOLUME
+from config import WAKE_WORD, VOICE_RATE, VOICE_VOLUME, AI_PROVIDER
+from ai.provider import chat
 
-# Initialize TTS
 engine = pyttsx3.init()
 engine.setProperty('rate', VOICE_RATE)
 engine.setProperty('volume', VOICE_VOLUME)
 
 
 def speak(text):
-    print(f"Jarvis: {text}")
+    print(f'Jarvis: {text}')
     engine.say(text)
     engine.runAndWait()
 
+
 def listen():
-    r = sr.Recognizer()
+    recognizer = sr.Recognizer()
     with sr.Microphone() as source:
-        print("Слушаю...")
-        audio = r.listen(source, timeout=5)
+        print('Слушаю...')
+        audio = recognizer.listen(source, timeout=5)
+
     try:
-        text = r.recognize_google(audio, language='ru-RU')
-        print(f"Вы: {text}")
-        return text.lower()
-    except:
+        text = recognizer.recognize_google(audio, language='ru-RU')
+        print(f'Вы: {text}')
+        return text
+    except Exception:
         return None
 
+
 def main():
-    speak("Привет, я Jarvis. Чем могу помочь?")
+    speak('Jarvis запущен.')
+
     while True:
         command = listen()
-        if command and WAKE_WORD in command:
-            speak("Да, сэр?")
-            # Здесь будет обработка команд
-            if "время" in command:
-                now = datetime.datetime.now().strftime("%H:%M")
-                speak(f"Сейчас {now}")
-            elif "пока" in command or "выход" in command:
-                speak("До свидания!")
-                break
 
-if __name__ == "__main__":
+        if not command:
+            continue
+
+        if 'выход' in command.lower() or 'пока' in command.lower():
+            speak('До свидания!')
+            break
+
+        if WAKE_WORD in command.lower():
+            prompt = command.lower().replace(WAKE_WORD, '').strip()
+
+            if not prompt:
+                speak('Слушаю вас.')
+                continue
+
+            try:
+                answer = chat(prompt, AI_PROVIDER)
+                speak(answer)
+            except Exception as e:
+                speak('Ошибка подключения к языковой модели.')
+                print(e)
+
+
+if __name__ == '__main__':
     main()
